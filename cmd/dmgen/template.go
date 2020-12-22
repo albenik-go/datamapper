@@ -45,7 +45,7 @@ type {{.ModelName}}Mapper struct {
 func New{{.ModelName}}Mapper(m *{{.ModelName}}) *{{.ModelName}}Mapper {
 	return &{{.ModelName}}Mapper{
 		model:  m,
-		base:   modelMapperBase,
+		base:   {{.ModelName | lcFirst}}MapperBase,
 		fields: &{{.ModelName}}Wrapper{model: m},
 
 		selectFields: []interface{}{{"{"}}{{.SelectFields | asRefsSlice}}{{"}"}},

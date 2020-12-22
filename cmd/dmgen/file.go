@@ -23,13 +23,8 @@ func (f *File) genDecl(node ast.Node) bool {
 	}
 
 	for _, spec := range decl.Specs {
-		tspec := spec.(*ast.TypeSpec) // Guaranteed to succeed as this is TYPE.
-		if tspec.Name.Name != f.typeName {
-			continue
-		}
-
-		texpr, ok := tspec.Type.(*ast.StructType)
-		if !ok || texpr.Incomplete {
+		tspec, texpr, ok := getSpecType(spec)
+		if !ok || tspec.Name.Name != f.typeName {
 			continue
 		}
 
@@ -40,34 +35,59 @@ func (f *File) genDecl(node ast.Node) bool {
 			UpdateFields: make([]*fieldInfo, 0, len(texpr.Fields.List)),
 		}
 
-		for _, field := range texpr.Fields.List {
-			if len(field.Names) == 0 || field.Names[0].Name == "" {
-				log.Fatalf("Field error: %#v", field)
-			}
-
-			tag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
-			optstr, ok := tag.Lookup("map")
-			if !ok {
-				continue
-			}
-
-			opts := strings.Split(optstr, ",")
-			if len(opts) == 0 {
-				log.Fatalf("Invalid tag %q", tag)
-			}
-
-			f := &fieldInfo{FieldName: field.Names[0].Name, ColumnName: opts[0]}
-			info.SelectFields = append(info.SelectFields, f)
-			if !tagOptionExists(opts[1:], "auto") {
-				info.InsertFields = append(info.InsertFields, f)
-				info.UpdateFields = append(info.UpdateFields, f)
-			}
-		}
+		f.processTypeSpec(texpr, info)
 
 		f.models = append(f.models, info)
 	}
 
 	return false
+}
+
+func (f *File) processTypeSpec(expr *ast.StructType, info *modelInfo) {
+	for _, field := range expr.Fields.List {
+		if ident, ok := field.Type.(*ast.Ident); ok && ident.Obj != nil && ident.Obj.Kind == ast.Typ {
+			_, texpr, ok := getSpecType(ident.Obj.Decl)
+			if !ok {
+				continue
+			}
+			f.processTypeSpec(texpr, info)
+			continue
+		}
+
+		if len(field.Names) == 0 || field.Names[0].Name == "" {
+			log.Fatalf("Field error: %#v", field)
+		}
+
+		tag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
+		optstr, ok := tag.Lookup("map")
+		if !ok {
+			continue
+		}
+
+		opts := strings.Split(optstr, ",")
+		if len(opts) == 0 {
+			log.Fatalf("Invalid tag %q", tag)
+		}
+
+		f := &fieldInfo{FieldName: field.Names[0].Name, ColumnName: opts[0]}
+		info.SelectFields = append(info.SelectFields, f)
+		if !tagOptionExists(opts[1:], "auto") {
+			info.InsertFields = append(info.InsertFields, f)
+			info.UpdateFields = append(info.UpdateFields, f)
+		}
+	}
+}
+
+func getSpecType(spec interface{}) (s *ast.TypeSpec, t *ast.StructType, ok bool) {
+	if s, ok = spec.(*ast.TypeSpec); !ok {
+		return nil, nil, false
+	}
+
+	if t, ok = s.Type.(*ast.StructType); !ok || t.Incomplete {
+		return nil, nil, false
+	}
+
+	return
 }
 
 func tagOptionExists(opts []string, name string) bool {
