@@ -20,6 +20,13 @@ func (g *generator) printf(format string, args ...interface{}) {
 	fmt.Fprintf(&g.buf, format, args...)
 }
 
+func (g *generator) writeHeader(cmd, pkg string) {
+	writeHeader(&g.buf, &info{
+		Command: cmd,
+		Package: pkg,
+	})
+}
+
 func (g *generator) parsePackage(patterns []string, tags []string) {
 	cfg := &packages.Config{
 		Mode: packages.NeedName |
@@ -60,13 +67,16 @@ func (g *generator) addPackage(pkg *packages.Package) {
 	}
 }
 
-func (g *generator) generate(typeName string) {
-	for _, file := range g.pkg.files {
-		file.typeName = typeName
-		if file.file != nil {
-			ast.Inspect(file.file, file.genDecl)
-			if len(file.models) > 0 {
-				execTemplate(&g.buf, file.models[0])
+func (g *generator) generate(types []string) {
+	for _, typ := range types {
+		for _, file := range g.pkg.files {
+			file.models = nil
+			file.typeName = typ
+			if file.file != nil {
+				ast.Inspect(file.file, file.genDecl)
+				for _, m := range file.models {
+					writeBody(&g.buf, m)
+				}
 			}
 		}
 	}

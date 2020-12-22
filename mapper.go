@@ -1,11 +1,5 @@
 package datamapper
 
-type ModelMapperBase struct {
-	SelectColumns []string
-	InsertColumns []string
-	UpdateColumns []string
-}
-
 type Field struct {
 	Name string
 	Ref  interface{}

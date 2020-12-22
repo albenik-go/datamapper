@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"log"
+	"reflect"
 	"strings"
 )
 
@@ -45,38 +45,36 @@ func (f *File) genDecl(node ast.Node) bool {
 				log.Fatalf("Field error: %#v", field)
 			}
 
-			tags, err := parseTags(strings.Trim(field.Tag.Value, "`"))
-			if err != nil {
-				log.Fatal("Tag parse error:", err)
-			}
-
-			tag, ok := tags["map"]
+			tag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
+			optstr, ok := tag.Lookup("map")
 			if !ok {
 				continue
 			}
 
-			fmt.Println("TAG:", tag.Name)
+			opts := strings.Split(optstr, ",")
+			if len(opts) == 0 {
+				log.Fatalf("Invalid tag %q", tag)
+			}
 
-			info.SelectFields = append(info.SelectFields, &fieldInfo{
-				FieldName:  field.Names[0].Name,
-				ColumnName: tag.Name,
-			})
-
-			if !tag.HasOption("autogen") {
-				info.InsertFields = append(info.InsertFields, &fieldInfo{
-					FieldName:  field.Names[0].Name,
-					ColumnName: tag.Name,
-				})
-
-				info.UpdateFields = append(info.UpdateFields, &fieldInfo{
-					FieldName:  field.Names[0].Name,
-					ColumnName: tag.Name,
-				})
+			f := &fieldInfo{FieldName: field.Names[0].Name, ColumnName: opts[0]}
+			info.SelectFields = append(info.SelectFields, f)
+			if !tagOptionExists(opts[1:], "auto") {
+				info.InsertFields = append(info.InsertFields, f)
+				info.UpdateFields = append(info.UpdateFields, f)
 			}
 		}
 
 		f.models = append(f.models, info)
 	}
 
+	return false
+}
+
+func tagOptionExists(opts []string, name string) bool {
+	for _, o := range opts {
+		if o == name {
+			return true
+		}
+	}
 	return false
 }
