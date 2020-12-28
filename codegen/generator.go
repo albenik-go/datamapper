@@ -18,7 +18,7 @@ import (
 
 // `json:"column_name" col:",auto"` if nameTag=="json"
 // `col:"column_name,auto"`
-func Generate(targetPkg, srcName string, tags, types []string, nameTag, optTag string, out io.Writer) error {
+func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nameTag, optTag string, out io.Writer) error {
 	buf := bytes.NewBuffer(nil)
 
 	conf := &packages.Config{
@@ -48,7 +48,7 @@ func Generate(targetPkg, srcName string, tags, types []string, nameTag, optTag s
 
 	for _, f := range pkg.Syntax {
 		var models []*template.ModelInfo
-		ast.Inspect(f, walkFunc(types, nameTag, optTag, &models))
+		ast.Inspect(f, walkFunc(types, exclude, nameTag, optTag, &models))
 		for _, m := range models {
 			if err := template.WriteModel(buf, m); err != nil {
 				return err
@@ -67,7 +67,7 @@ func Generate(targetPkg, srcName string, tags, types []string, nameTag, optTag s
 	return err
 }
 
-func walkFunc(types []string, nameTag, optTag string, models *[]*template.ModelInfo) func(ast.Node) bool {
+func walkFunc(types []string, exclude bool, nameTag, optTag string, models *[]*template.ModelInfo) func(ast.Node) bool {
 	return func(node ast.Node) bool {
 		decl, ok := node.(*ast.GenDecl)
 		if !ok || decl.Tok != token.TYPE {
@@ -75,7 +75,7 @@ func walkFunc(types []string, nameTag, optTag string, models *[]*template.ModelI
 		}
 
 		for _, spec := range decl.Specs {
-			typeName, typeInfo, ok := getStructType(spec, types...)
+			typeName, typeInfo, ok := getStructType(spec, exclude, types)
 			if !ok {
 				continue
 			}
@@ -100,7 +100,7 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 		// processing embeded types if any
 		if ident, ok := field.Type.(*ast.Ident); ok && ident.Obj != nil && ident.Obj.Kind == ast.Typ {
 			var stype *ast.StructType
-			if _, stype, ok = getStructType(ident.Obj.Decl); !ok {
+			if _, stype, ok = getStructType(ident.Obj.Decl, false, nil); !ok {
 				continue
 			}
 			collectModelInfo(info, stype, nameTag, optTag)
@@ -112,6 +112,9 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 			panic(fmt.Errorf("field error: %#v", field))
 		}
 
+		if field.Tag == nil {
+			continue
+		}
 		structTag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
 		tagStr, ok := structTag.Lookup(optTag)
 		if !ok && optTag == nameTag {
@@ -142,7 +145,12 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 			colName = opts[0].Name
 		}
 
-		f := &template.FieldInfo{FieldName: field.Names[0].Name, ColumnName: colName}
+		f := &template.FieldInfo{
+			FieldName:  field.Names[0].Name,
+			ColumnName: colName,
+			Nullable:   tagOpts.Lookup("nullable") != nil,
+		}
+
 		info.SelectFields = append(info.SelectFields, f)
 		if tagOpts.Lookup("auto") == nil {
 			info.InsertFields = append(info.InsertFields, f)
@@ -151,7 +159,7 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 	}
 }
 
-func getStructType(spec interface{}, filter ...string) (string, *ast.StructType, bool) {
+func getStructType(spec interface{}, exclude bool, filter []string) (string, *ast.StructType, bool) {
 	var (
 		s  *ast.TypeSpec
 		t  *ast.StructType
@@ -162,12 +170,12 @@ func getStructType(spec interface{}, filter ...string) (string, *ast.StructType,
 		return "", nil, false
 	}
 
-	found := true
+	found := !exclude
 	if len(filter) > 0 {
-		found = false
+		found = !found
 		for _, name := range filter {
 			if s.Name.Name == name {
-				found = true
+				found = !found
 				break
 			}
 		}

@@ -15,4 +15,5 @@ type ModelInfo struct {
 type FieldInfo struct {
 	FieldName  string
 	ColumnName string
+	Nullable   bool
 }

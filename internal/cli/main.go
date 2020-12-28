@@ -13,13 +13,14 @@ func Main(name string) int {
 	const defaultTagName = "col"
 
 	var (
-		sourceArg      = flag.String("source", "", "Input file name. Required.")
-		destinationArg = flag.String("destination", "", "Output file. Defaults to stdout.")
-		packageArg     = flag.String("package", "", "Package of the generated code. Defaults to the package of the input.")
-		typesArg       = flag.String("types", "", "Comma-separated list of type names. Required.")
-		buildTagsArgs  = flag.String("tags", "", "Comma-separated list of build tags to apply")
-		nameTagArg     = flag.String("name_tag", defaultTagName, fmt.Sprintf("Struct tag key to get column name from. Defaults to %q.", defaultTagName))
-		optionsTagArg  = flag.String("options_tag", defaultTagName, fmt.Sprintf("Struct tag key to get field options from. Defaults to %q.", defaultTagName))
+		sourceArg       = flag.String("source", "", "Input file name. Required.")
+		destinationArg  = flag.String("destination", "", "Output file. Defaults to stdout.")
+		packageArg      = flag.String("package", "", "Package of the generated code. Defaults to the package of the input.")
+		typesArg        = flag.String("types", "", "Comma-separated list of types names.")
+		excludeTypesArg = flag.String("types_exclude", "", "Comma-separated list of types names to exclude.")
+		buildTagsArgs   = flag.String("tags", "", "Comma-separated list of build tags to apply")
+		nameTagArg      = flag.String("name_tag", defaultTagName, fmt.Sprintf("Struct tag key to get column name from. Defaults to %q.", defaultTagName))
+		optionsTagArg   = flag.String("options_tag", defaultTagName, fmt.Sprintf("Struct tag key to get field options from. Defaults to %q.", defaultTagName))
 	)
 
 	flag.Usage = func() {
@@ -41,9 +42,19 @@ func Main(name string) int {
 		defer dest.Close()
 	}
 
+	exclude := false
 	var types []string
 	if len(*typesArg) > 0 {
 		types = strings.Split(*typesArg, ",")
+	}
+
+	if len(*excludeTypesArg) > 0 {
+		if len(*typesArg) > 0 {
+			fmt.Fprintln(os.Stderr, "-types & -types_exclude cannot be used together")
+			return 2
+		}
+		types = strings.Split(*excludeTypesArg, ",")
+		exclude = true
 	}
 
 	var tags []string
@@ -55,7 +66,7 @@ func Main(name string) int {
 		*sourceArg = "."
 	}
 
-	if err := codegen.Generate(*packageArg, *sourceArg, tags, types, *nameTagArg, *optionsTagArg, dest); err != nil {
+	if err := codegen.Generate(*packageArg, *sourceArg, tags, types, exclude, *nameTagArg, *optionsTagArg, dest); err != nil {
 		fmt.Fprintln(os.Stderr, "Generation failed:", err)
 		return 1
 	}
