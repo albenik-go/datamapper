@@ -18,17 +18,29 @@ var {{.ModelName | lcFirst}}MapperBase = [][]string {
 	{{.UpdateFields | asColumnsSlice}},
 }
 
+type {{.ModelName}}ModelStruct struct {
+{{- range .SelectFields}}
+	{{.FieldName}} string
+{{- end}}
+}
+
+var {{.ModelName}}Model = {{.ModelName}}ModelStruct {
+{{- range .SelectFields}}
+	{{.FieldName}}: "{{.ColumnName}}",
+{{- end}}
+}
+
 type {{.ModelName}}Wrapper struct {
-	model *{{.ModelName}}
+	entity *{{.ModelName}}
 }
 {{range .SelectFields}}
 func (m *{{$.ModelName}}Wrapper) {{.FieldName}}() datamapper.Field {
-	return datamapper.Field{Name: "{{.ColumnName}}", Ref: &m.model.{{.FieldName}}}
+	return datamapper.Field{Name: "{{.ColumnName}}", Ref: &m.entity.{{.FieldName}}}
 }
 {{end}}
 
 type {{.ModelName}}Mapper struct {
-	model  *{{.ModelName}}
+	entity *{{.ModelName}}
 	base   [][]string
 	fields *{{.ModelName}}Wrapper
 
@@ -39,9 +51,9 @@ type {{.ModelName}}Mapper struct {
 
 func New{{.ModelName}}Mapper(m *{{.ModelName}}) *{{.ModelName}}Mapper {
 	return &{{.ModelName}}Mapper{
-		model:  m,
+		entity:  m,
 		base:   {{.ModelName | lcFirst}}MapperBase,
-		fields: &{{.ModelName}}Wrapper{model: m},
+		fields: &{{.ModelName}}Wrapper{entity: m},
 
 		selectFields: []interface{}{{.SelectFields | asRefsSlice}},
 		insertFields: []interface{}{{.InsertFields | asRefsSlice}},
