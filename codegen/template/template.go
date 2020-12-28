@@ -5,16 +5,11 @@ import (
 	"io"
 	"strings"
 	"text/template"
-	"unicode/utf8"
 )
 
 func parseTemplate(s string) *template.Template {
 	t := template.New("mapper").
 		Funcs(template.FuncMap{
-			"lcFirst": func(s string) string {
-				r, size := utf8.DecodeRuneInString(s)
-				return strings.ToLower(string(r)) + s[size:]
-			},
 			"asColumnsSlice": func(fields []*FieldInfo) string {
 				cols := make([]string, len(fields))
 				for i, f := range fields {

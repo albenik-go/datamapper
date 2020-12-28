@@ -12,19 +12,21 @@ const body = `
 
 // Columns list is always the same for all mapper instances.
 // So let's keep it pre-created and re-use it.
-var {{.ModelName | lcFirst}}MapperBase = [][]string {
-	{{.SelectFields | asColumnsSlice}},
-	{{.InsertFields | asColumnsSlice}},
-	{{.UpdateFields | asColumnsSlice}},
+var {{.ModelName}}MapperBase = struct {
+	SelectColumns []string
+	InsertColumns []string
+	UpdateColumns []string
+}{
+	SelectColumns: []string{{.SelectFields | asColumnsSlice}},
+	InsertColumns: []string{{.InsertFields | asColumnsSlice}},
+	UpdateColumns: []string{{.UpdateFields | asColumnsSlice}},
 }
 
-type {{.ModelName}}ModelStruct struct {
+var {{.ModelName}}Model = struct {
 {{- range .SelectFields}}
 	{{.FieldName}} string
 {{- end}}
-}
-
-var {{.ModelName}}Model = {{.ModelName}}ModelStruct {
+}{
 {{- range .SelectFields}}
 	{{.FieldName}}: "{{.ColumnName}}",
 {{- end}}
@@ -41,7 +43,6 @@ func (m *{{$.ModelName}}Wrapper) {{.FieldName}}() datamapper.Field {
 
 type {{.ModelName}}Mapper struct {
 	entity *{{.ModelName}}
-	base   [][]string
 	fields *{{.ModelName}}Wrapper
 
 	selectFields []interface{}
@@ -52,7 +53,6 @@ type {{.ModelName}}Mapper struct {
 func New{{.ModelName}}Mapper(m *{{.ModelName}}) *{{.ModelName}}Mapper {
 	return &{{.ModelName}}Mapper{
 		entity:  m,
-		base:   {{.ModelName | lcFirst}}MapperBase,
 		fields: &{{.ModelName}}Wrapper{entity: m},
 
 		selectFields: []interface{}{{.SelectFields | asRefsSlice}},
@@ -62,7 +62,7 @@ func New{{.ModelName}}Mapper(m *{{.ModelName}}) *{{.ModelName}}Mapper {
 }
 
 func (m *{{.ModelName}}Mapper) SelectColumns() []string {
-	return m.base[0]
+	return {{.ModelName}}MapperBase.SelectColumns
 }
 
 func (m *{{.ModelName}}Mapper) SelectFields() []interface{} {
@@ -70,7 +70,7 @@ func (m *{{.ModelName}}Mapper) SelectFields() []interface{} {
 }
 
 func (m *{{.ModelName}}Mapper) InsertColumns() []string {
-	return m.base[1]
+	return {{.ModelName}}MapperBase.InsertColumns
 }
 
 func (m *{{.ModelName}}Mapper) InsertFields() []interface{} {
@@ -78,7 +78,7 @@ func (m *{{.ModelName}}Mapper) InsertFields() []interface{} {
 }
 
 func (m *{{.ModelName}}Mapper) UpdateColumns() []string {
-	return m.base[2]
+	return {{.ModelName}}MapperBase.UpdateColumns
 }
 
 func (m *{{.ModelName}}Mapper) UpdateFields() []interface{} {
