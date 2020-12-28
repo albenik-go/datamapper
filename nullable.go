@@ -1,13 +1,20 @@
 package datamapper
 
+import (
+	"database/sql/driver"
+)
+
 type Nullable struct {
-	Value interface{}
+	WrappedValue interface{}
 }
 
-// Scan implements the Scanner interface.
 func (n *Nullable) Scan(value interface{}) error {
 	if value == nil {
 		return nil
 	}
-	return convertAssign(&n.Value, value)
+	return convertAssign(&n.WrappedValue, value)
+}
+
+func (n *Nullable) Value() (driver.Value, error) {
+	return n.WrappedValue, nil
 }

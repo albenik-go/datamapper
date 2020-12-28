@@ -26,7 +26,7 @@ func parseTemplate(s string) *template.Template {
 				refs := make([]string, len(fields))
 				for i, f := range fields {
 					if f.Nullable {
-						refs[i] = fmt.Sprintf("&datamapper.Nullable{Value: &m.%s}", f.FieldName)
+						refs[i] = fmt.Sprintf("&datamapper.Nullable{WrappedValue: &m.%s}", f.FieldName)
 					} else {
 						refs[i] = fmt.Sprintf("&m.%s", f.FieldName)
 					}
