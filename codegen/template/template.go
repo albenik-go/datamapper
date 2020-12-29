@@ -12,6 +12,7 @@ func parseTemplate(s string) *template.Template {
 		Funcs(template.FuncMap{
 			"asColumnsSlice": asColumnSliceFilter,
 			"asRefsSlice":    asRefsSliceFilter,
+			"asRef":          asRefFilter,
 		})
 
 	return template.Must(t.Parse(s))
@@ -28,15 +29,21 @@ func asColumnSliceFilter(fields []*FieldInfo) string {
 func asRefsSliceFilter(fields []*FieldInfo) string {
 	refs := make([]string, len(fields))
 	for i, f := range fields {
-		rs := fmt.Sprintf("&m.%s", f.FieldName)
-		if len(f.Wrappers) > 0 {
-			for i := len(f.Wrappers) - 1; i >= 0; i-- {
-				rs = fmt.Sprintf("&datamapper.%s{WrappedValue: %s}", f.Wrappers[i], rs)
-			}
+		s := fmt.Sprintf("&m.%s", f.FieldName)
+		if len(f.Wrapper) > 0 {
+			s = fmt.Sprintf("&datamapper.%s{V: %s}", f.Wrapper, s)
 		}
-		refs[i] = rs
+		refs[i] = s
 	}
 	return fmt.Sprintf("{%s}", strings.Join(refs, ", "))
+}
+
+func asRefFilter(field *FieldInfo) string {
+	s := fmt.Sprintf("&m.entity.%s", field.FieldName)
+	if len(field.Wrapper) > 0 {
+		s = fmt.Sprintf("&datamapper.%s{V: %s}", field.Wrapper, s)
+	}
+	return s
 }
 
 func WriteHeader(w io.Writer, i *Header) error {

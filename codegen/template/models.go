@@ -15,5 +15,5 @@ type ModelInfo struct {
 type FieldInfo struct {
 	FieldName  string
 	ColumnName string
-	Wrappers   []string
+	Wrapper    string
 }

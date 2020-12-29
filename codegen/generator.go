@@ -151,21 +151,8 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 			ColumnName: colName,
 		}
 
-		if tagOpts.Lookup("nullable") != nil {
-			f.Wrappers = append(f.Wrappers, "Nullable")
-		}
-
-		if tt := tagOpts.Lookup("type"); tt != nil {
-			switch tt.Value {
-			case "int":
-				switch t := field.Type.(type) {
-				case *ast.Ident:
-					switch t.Name {
-					case "bool":
-						f.Wrappers = append(f.Wrappers, "IntBool")
-					}
-				}
-			}
+		if tt := tagOpts.Lookup("wrap"); tt != nil {
+			f.Wrapper = tt.Value
 		}
 
 		info.SelectFields = append(info.SelectFields, f)

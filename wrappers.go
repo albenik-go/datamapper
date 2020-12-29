@@ -2,25 +2,30 @@ package datamapper
 
 import (
 	"database/sql/driver"
+	"time"
 )
 
-type Nullable struct {
-	WrappedValue interface{}
+type NullTime struct {
+	V *time.Time
 }
 
-func (n *Nullable) Scan(value interface{}) error {
+func (t *NullTime) Scan(value interface{}) error {
 	if value == nil {
+		*t.V = time.Time{}
 		return nil
 	}
-	return convertAssign(&n.WrappedValue, value)
+	return convertAssign(t.V, value)
 }
 
-func (n *Nullable) Value() (driver.Value, error) {
-	return n.WrappedValue, nil
+func (t *NullTime) Value() (driver.Value, error) {
+	if t.V.IsZero() {
+		return nil, nil
+	}
+	return *t.V, nil
 }
 
 type IntBool struct {
-	WrappedValue *bool
+	V *bool
 }
 
 func (b *IntBool) Scan(value interface{}) error {
@@ -31,12 +36,12 @@ func (b *IntBool) Scan(value interface{}) error {
 	if err := convertAssign(&i, value); err != nil {
 		return err
 	}
-	*b.WrappedValue = i != 0
+	*b.V = i != 0
 	return nil
 }
 
 func (b *IntBool) Value() (driver.Value, error) {
-	if *b.WrappedValue {
+	if *b.V {
 		return 1, nil
 	}
 	return 0, nil
