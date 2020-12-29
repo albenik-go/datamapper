@@ -10,27 +10,33 @@ import (
 func parseTemplate(s string) *template.Template {
 	t := template.New("mapper").
 		Funcs(template.FuncMap{
-			"asColumnsSlice": func(fields []*FieldInfo) string {
-				cols := make([]string, len(fields))
-				for i, f := range fields {
-					cols[i] = fmt.Sprintf("%q", f.ColumnName)
-				}
-				return fmt.Sprintf("{%s}", strings.Join(cols, ", "))
-			},
-			"asRefsSlice": func(fields []*FieldInfo) string {
-				refs := make([]string, len(fields))
-				for i, f := range fields {
-					if f.Nullable {
-						refs[i] = fmt.Sprintf("&datamapper.Nullable{WrappedValue: &m.%s}", f.FieldName)
-					} else {
-						refs[i] = fmt.Sprintf("&m.%s", f.FieldName)
-					}
-				}
-				return fmt.Sprintf("{%s}", strings.Join(refs, ", "))
-			},
+			"asColumnsSlice": asColumnSliceFilter,
+			"asRefsSlice":    asRefsSliceFilter,
 		})
 
 	return template.Must(t.Parse(s))
+}
+
+func asColumnSliceFilter(fields []*FieldInfo) string {
+	cols := make([]string, len(fields))
+	for i, f := range fields {
+		cols[i] = fmt.Sprintf("%q", f.ColumnName)
+	}
+	return fmt.Sprintf("{%s}", strings.Join(cols, ", "))
+}
+
+func asRefsSliceFilter(fields []*FieldInfo) string {
+	refs := make([]string, len(fields))
+	for i, f := range fields {
+		rs := fmt.Sprintf("&m.%s", f.FieldName)
+		if len(f.Wrappers) > 0 {
+			for i := len(f.Wrappers) - 1; i >= 0; i-- {
+				rs = fmt.Sprintf("&datamapper.%s{WrappedValue: %s}", f.Wrappers[i], rs)
+			}
+		}
+		refs[i] = rs
+	}
+	return fmt.Sprintf("{%s}", strings.Join(refs, ", "))
 }
 
 func WriteHeader(w io.Writer, i *Header) error {

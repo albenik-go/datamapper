@@ -60,6 +60,7 @@ func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nam
 	if err != nil {
 		// Should never happen, but can arise when developing this code.
 		// The user can compile the output to see the error.
+		fmt.Println(string(buf.Bytes()))
 		return err
 	}
 
@@ -148,7 +149,23 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 		f := &template.FieldInfo{
 			FieldName:  field.Names[0].Name,
 			ColumnName: colName,
-			Nullable:   tagOpts.Lookup("nullable") != nil,
+		}
+
+		if tagOpts.Lookup("nullable") != nil {
+			f.Wrappers = append(f.Wrappers, "Nullable")
+		}
+
+		if tt := tagOpts.Lookup("type"); tt != nil {
+			switch tt.Value {
+			case "int":
+				switch t := field.Type.(type) {
+				case *ast.Ident:
+					switch t.Name {
+					case "bool":
+						f.Wrappers = append(f.Wrappers, "IntBool")
+					}
+				}
+			}
 		}
 
 		info.SelectFields = append(info.SelectFields, f)
