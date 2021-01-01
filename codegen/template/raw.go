@@ -87,6 +87,10 @@ func (m *{{.ModelName}}Mapper) UpdateFields() []interface{} {
 
 func (m *{{.ModelName}}Mapper) Model() *{{.ModelName}}Wrapper {
 	return m.fields
+}
+
+func (m *{{.ModelName}}Mapper) Entity() *{{.ModelName}} {
+	return m.entity
 }`
 
 var (
