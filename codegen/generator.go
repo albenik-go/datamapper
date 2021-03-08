@@ -60,7 +60,7 @@ func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nam
 	if err != nil {
 		// Should never happen, but can arise when developing this code.
 		// The user can compile the output to see the error.
-		fmt.Println(string(buf.Bytes()))
+		fmt.Println(buf.String())
 		return err
 	}
 
