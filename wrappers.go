@@ -24,6 +24,25 @@ func (t *NullTime) Value() (driver.Value, error) {
 	return *t.V, nil
 }
 
+type NullInt struct {
+	V *int
+}
+
+func (s *NullInt) Scan(value interface{}) error {
+	if value == nil {
+		*s.V = 0
+		return nil
+	}
+	return convertAssign(s.V, value)
+}
+
+func (s *NullInt) Value() (driver.Value, error) {
+	if *s.V == 0 {
+		return nil, nil
+	}
+	return *s.V, nil
+}
+
 type NullString struct {
 	V *string
 }

@@ -13,14 +13,14 @@ func Main(name string) int {
 	const defaultTagName = "col"
 
 	var (
-		sourceArg       = flag.String("source", "", "Input file name. Required.")
-		destinationArg  = flag.String("destination", "", "Output file. Defaults to stdout.")
-		packageArg      = flag.String("package", "", "Package of the generated code. Defaults to the package of the input.")
+		sourceArg       = flag.String("src", "", "Input file name. Required.")
+		destinationArg  = flag.String("dst", "", "Output file. Defaults to stdout.")
+		packageArg      = flag.String("pkg", "", "Package of the generated code. Defaults to the package of the input.")
 		typesArg        = flag.String("types", "", "Comma-separated list of types names.")
 		excludeTypesArg = flag.String("types_exclude", "", "Comma-separated list of types names to exclude.")
 		buildTagsArgs   = flag.String("tags", "", "Comma-separated list of build tags to apply")
-		nameTagArg      = flag.String("name_tag", defaultTagName, fmt.Sprintf("Struct tag key to get column name from. Defaults to %q.", defaultTagName))
-		optionsTagArg   = flag.String("options_tag", defaultTagName, fmt.Sprintf("Struct tag key to get field options from. Defaults to %q.", defaultTagName))
+		nameTagArg      = flag.String("nametag", defaultTagName, fmt.Sprintf("Struct tag key to get column name from. Defaults to %q.", defaultTagName))
+		optionsTagArg   = flag.String("optstag", defaultTagName, fmt.Sprintf("Struct tag key to get field options from. Defaults to %q.", defaultTagName))
 	)
 
 	flag.Usage = func() {
