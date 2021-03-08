@@ -1,7 +1,7 @@
 package template
 
 const header = `// Generated code! DO NOT EDIT!.
-// dmgen {{.DmgenVersion}}
+// github.com/albenik-go/datamapper/cmd/dmgen {{.DmgenVersion}}
 
 package {{.Package}}
 
