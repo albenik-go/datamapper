@@ -1,7 +1,8 @@
 package template
 
 type Header struct {
-	Package string
+	Package      string
+	DmgenVersion string
 }
 
 type ModelInfo struct {

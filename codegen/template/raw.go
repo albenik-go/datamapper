@@ -1,6 +1,7 @@
 package template
 
 const header = `// Generated code! DO NOT EDIT!.
+// dmgen {{.DmgenVersion}}
 
 package {{.Package}}
 

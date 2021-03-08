@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"io"
 	"reflect"
+	"runtime/debug"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -42,7 +43,14 @@ func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nam
 		targetPkg = pkg.Name
 	}
 
-	if err := template.WriteHeader(buf, &template.Header{Package: targetPkg}); err != nil {
+	var dmgenVer string
+	if buildinfo, ok := debug.ReadBuildInfo(); ok {
+		dmgenVer = buildinfo.Main.Version
+	} else {
+		dmgenVer = "ERROR! No version available as of built without module support!"
+	}
+
+	if err := template.WriteHeader(buf, &template.Header{Package: targetPkg, DmgenVersion: dmgenVer}); err != nil {
 		return err
 	}
 
