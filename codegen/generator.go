@@ -107,12 +107,19 @@ func walkFunc(types []string, exclude bool, nameTag, optTag string, models *[]*t
 func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, optTag string) {
 	for _, field := range expr.Fields.List {
 		// processing embeded types if any
-		if ident, ok := field.Type.(*ast.Ident); ok && ident.Obj != nil && ident.Obj.Kind == ast.Typ {
-			var stype *ast.StructType
-			if _, stype, ok = getStructType(ident.Obj.Decl, false, nil); !ok {
-				continue
+		var obj *ast.Object
+		switch ftype := field.Type.(type) {
+		case *ast.Ident:
+			obj = ftype.Obj
+		case *ast.StarExpr:
+			if ident, ok := ftype.X.(*ast.Ident); ok {
+				obj = ident.Obj
 			}
-			collectModelInfo(info, stype, nameTag, optTag)
+		}
+		if obj != nil && obj.Kind == ast.Typ {
+			if _, stype, ok := getStructType(obj.Decl, false, nil); ok {
+				collectModelInfo(info, stype, nameTag, optTag)
+			}
 			continue
 		}
 
