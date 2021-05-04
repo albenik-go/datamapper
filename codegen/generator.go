@@ -17,8 +17,9 @@ import (
 	"github.com/albenik-go/datamapper/codegen/template"
 )
 
+// Generate generates mapper go code
 // `json:"column_name" col:",auto"` if nameTag=="json"
-// `col:"column_name,auto"`
+// `col:"column_name,auto"`.
 func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nameTag, optTag string, out io.Writer) error {
 	buf := bytes.NewBuffer(nil)
 

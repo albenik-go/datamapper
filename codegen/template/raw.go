@@ -11,8 +11,7 @@ import (
 
 const body = `
 
-// Columns list is always the same for all mapper instances.
-// So let's keep it pre-created and re-use it.
+// {{.ModelName}}MapperBase shared column list is always the same for all mapper instances.
 var {{.ModelName}}MapperBase = struct {
 	SelectColumns []string
 	InsertColumns []string
@@ -84,6 +83,14 @@ func (m *{{.ModelName}}Mapper) UpdateColumns() []string {
 
 func (m *{{.ModelName}}Mapper) UpdateFields() []interface{} {
 	return m.updateFields
+}
+
+func (m *{{.ModelName}}Mapper) UpdateFieldsMap() map[string]interface{} {
+	return map[string]interface{}{
+		{{- range .SelectFields}}
+			"{{.ColumnName}}": &m.entity.{{.FieldName}},
+		{{- end}}
+	}
 }
 
 func (m *{{.ModelName}}Mapper) Model() *{{.ModelName}}Wrapper {

@@ -3,7 +3,7 @@ module github.com/albenik-go/datamapper
 go 1.15
 
 require (
-	golang.org/x/mod v0.4.1 // indirect
-	golang.org/x/sys v0.0.0-20210305230114-8fe3ee5dd75b // indirect
+	golang.org/x/mod v0.4.2 // indirect
+	golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6 // indirect
 	golang.org/x/tools v0.1.0
 )
