@@ -26,10 +26,10 @@ func asColumnSliceFilter(fields []*FieldInfo) string {
 	return fmt.Sprintf("{%s}", strings.Join(cols, ", "))
 }
 
-func asRefsSliceFilter(fields []*FieldInfo) string {
+func asRefsSliceFilter(reciever string, fields []*FieldInfo) string {
 	refs := make([]string, len(fields))
 	for i, f := range fields {
-		s := fmt.Sprintf("&m.%s", f.FieldName)
+		s := fmt.Sprintf("%s.%s", reciever, f.FieldName)
 		if len(f.Wrapper) > 0 {
 			s = fmt.Sprintf("&datamapper.%s{V: %s}", f.Wrapper, s)
 		}

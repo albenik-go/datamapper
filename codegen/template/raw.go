@@ -50,15 +50,19 @@ type {{.ModelName}}Mapper struct {
 	updateFields []interface{}
 }
 
-func New{{.ModelName}}Mapper(m *{{.ModelName}}) *{{.ModelName}}Mapper {
+func New{{.ModelName}}Mapper(e *{{.ModelName}}) *{{.ModelName}}Mapper {
 	return &{{.ModelName}}Mapper{
-		entity:  m,
-		fields: &{{.ModelName}}Wrapper{entity: m},
+		entity:  e,
+		fields: &{{.ModelName}}Wrapper{entity: e},
 
-		selectFields: []interface{}{{.SelectFields | asRefsSlice}},
-		insertFields: []interface{}{{.InsertFields | asRefsSlice}},
-		updateFields: []interface{}{{.UpdateFields | asRefsSlice}},
+		selectFields: []interface{}{{.SelectFields | asRefsSlice "&e"}},
+		insertFields: []interface{}{{.InsertFields | asRefsSlice "&e"}},
+		updateFields: []interface{}{{.UpdateFields | asRefsSlice "&e"}},
 	}
+}
+
+func (m *{{.ModelName}}Mapper) EmptyClone() *{{.ModelName}}Mapper {
+	return New{{.ModelName}}Mapper(new({{.ModelName}}))
 }
 
 func (m *{{.ModelName}}Mapper) SelectColumns() []string {
