@@ -80,7 +80,7 @@ func (b *IntBool) Scan(value interface{}) error {
 
 func (b *IntBool) Value() (driver.Value, error) {
 	if *b.V {
-		return 1, nil
+		return int64(1), nil
 	}
-	return 0, nil
+	return int64(0), nil
 }
