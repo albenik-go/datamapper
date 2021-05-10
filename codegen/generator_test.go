@@ -136,6 +136,10 @@ func (m *ModelMapper) Model() *ModelWrapper {
 func (m *ModelMapper) Entity() *Model {
 	return m.entity
 }
+
+func (m *ModelMapper) EntityAsInterface() interface{} {
+	return m.entity
+}
 `
 
 func TestGenerate(t *testing.T) {

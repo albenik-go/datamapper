@@ -107,7 +107,12 @@ func (m *{{.ModelName}}Mapper) Model() *{{.ModelName}}Wrapper {
 
 func (m *{{.ModelName}}Mapper) Entity() *{{.ModelName}} {
 	return m.entity
-}`
+}
+
+func (m *{{.ModelName}}Mapper) EntityAsInterface() interface{} {
+	return m.entity
+}
+`
 
 var (
 	headerTpl = parseTemplate(header)

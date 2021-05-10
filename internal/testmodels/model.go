@@ -7,9 +7,9 @@ import (
 )
 
 type Model struct {
-	ID          int64     `col:"id,auto"`
-	String      string    `col:"string"`
-	Bool        bool      `col:"bool"`
-	WrappedBool bool      `col:"wrapped_bool,wrap=IntBool"`
-	Time        time.Time `col:"time"`
+	ID          int64     `db:"id,auto"`
+	String      string    `db:"string"`
+	Bool        bool      `db:"bool"`
+	WrappedBool bool      `db:"wrapped_bool,wrap=IntBool"`
+	Time        time.Time `db:"time"`
 }
