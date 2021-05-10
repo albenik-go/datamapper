@@ -91,7 +91,7 @@ func (m *ModelMapper) EmptyClone() *ModelMapper {
 	return NewModelMapper(new(Model))
 }
 
-func (m *ModelMapper) EmptyCloneAsInterface() interface{} {
+func (m *ModelMapper) UntypedEmptyClone() interface{} {
 	return m.EmptyClone()
 }
 
@@ -137,7 +137,7 @@ func (m *ModelMapper) Entity() *Model {
 	return m.entity
 }
 
-func (m *ModelMapper) EntityAsInterface() interface{} {
+func (m *ModelMapper) UntypedEntity() interface{} {
 	return m.entity
 }
 `

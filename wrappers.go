@@ -14,7 +14,7 @@ func (t *NullTime) Scan(value interface{}) error {
 		*t.V = time.Time{}
 		return nil
 	}
-	return convertAssign(t.V, value)
+	return ConvertAssign(t.V, value)
 }
 
 func (t *NullTime) Value() (driver.Value, error) {
@@ -33,7 +33,7 @@ func (s *NullInt) Scan(value interface{}) error {
 		*s.V = 0
 		return nil
 	}
-	return convertAssign(s.V, value)
+	return ConvertAssign(s.V, value)
 }
 
 func (s *NullInt) Value() (driver.Value, error) {
@@ -52,7 +52,7 @@ func (s *NullString) Scan(value interface{}) error {
 		*s.V = ""
 		return nil
 	}
-	return convertAssign(s.V, value)
+	return ConvertAssign(s.V, value)
 }
 
 func (s *NullString) Value() (driver.Value, error) {
@@ -70,11 +70,13 @@ func (b *IntBool) Scan(value interface{}) error {
 	if value == nil {
 		return nil
 	}
+
 	var i int
-	if err := convertAssign(&i, value); err != nil {
+	if err := ConvertAssign(&i, value); err != nil {
 		return err
 	}
 	*b.V = i != 0
+
 	return nil
 }
 

@@ -13,3 +13,44 @@ output:
   uniq-by-line: true
   path-prefix: ""
   sort-results: true
+
+linters-settings:
+  cyclop:
+    max-complexity: 15
+    skip-tests: true
+
+  gci:
+    local-prefixes: github.com/albenik-go/datamapper
+
+  funlen:
+    lines: 120
+    statements: 60
+
+linters:
+  enable-all: true
+  disable:
+    - exhaustivestruct
+    - gochecknoglobals
+    - lll
+    - maligned    # The linter 'maligned' is deprecated (since v1.38.0) due to: The repository of the linter has been archived by the owner.  Replaced by govet 'fieldalignment'.
+    - nlreturn
+    - paralleltest
+    - interfacer  # The linter 'interfacer' is deprecated (since v1.38.0) due to: The repository of the linter has been archived by the owner.
+    - scopelint   # The linter 'scopelint' is deprecated (since v1.39.0) due to: The repository of the linter has been deprecated by the owner.  Replaced by exportloopref.
+    - tagliatelle
+    - wrapcheck
+    - wsl
+
+issues:
+  exclude-rules:
+    - path: internal/cli
+      linters:
+        - gomnd
+
+    - path: template/raw.go
+      linters:
+        - gci
+
+    - path: codegen/generator_test.go
+      linters:
+        - gci

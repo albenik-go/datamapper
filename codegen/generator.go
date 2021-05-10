@@ -22,7 +22,6 @@ import (
 // Generate generates mapper go code
 // `name_tag:"column_name" opt_tag:",auto"` or `tag:"column_name,auto"` if tags are equal.
 func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nameTag, optTag string, out io.Writer) error {
-
 	conf := &packages.Config{
 		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo,
 		Tests: false,
@@ -35,7 +34,7 @@ func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nam
 		return errors.Wrap(err, "cannot load packages")
 	}
 	if len(pkgs) != 1 {
-		return fmt.Errorf("error: %d packages found", len(pkgs))
+		return errors.Errorf("error: %d packages found", len(pkgs))
 	}
 
 	pkg := pkgs[0]
@@ -70,7 +69,7 @@ func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nam
 	if err != nil {
 		// Should never happen, but can arise when developing this code.
 		// The user can compile the output to see the error.
-		fmt.Println(buf.String())
+		fmt.Println(buf.String()) //nolint:forbidigo
 		return err
 	}
 
@@ -113,7 +112,7 @@ func SimplifiedGenerate(filename, pkg, nameTag, optTag string, types []string, e
 		// The user can compile the output to see the error.
 		lines := strings.Split(buf.String(), "\n")
 		for n, l := range lines {
-			fmt.Printf("%03d: %s\n", n, l)
+			fmt.Printf("%03d: %s\n", n, l) //nolint:forbidigo
 		}
 		return errors.Wrap(err, "generated code format error")
 	}
@@ -147,12 +146,11 @@ func walkFunc(types []string, exclude bool, nameTag, optTag string, models *[]*t
 
 		return false
 	}
-
 }
 
-func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, optTag string) {
+func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, optTag string) { //nolint:cyclop,gocognit
 	for _, field := range expr.Fields.List {
-		// processing embeded types if any
+		// processing embedded types if any
 		var obj *ast.Object
 		switch ftype := field.Type.(type) {
 		case *ast.Ident:
@@ -171,7 +169,7 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 
 		if len(field.Names) == 0 || field.Names[0].Name == "" {
 			// unexpected case
-			panic(fmt.Errorf("field error: %#v", field))
+			panic(errors.Errorf("field error: %#v", field))
 		}
 
 		if field.Tag == nil {
@@ -185,7 +183,7 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 
 		tagOpts := tag.ParseOptions(tagStr)
 		if len(tagOpts) == 0 {
-			panic(fmt.Errorf("invalid tag %q", structTag))
+			panic(errors.Errorf("invalid tag %q", structTag))
 		}
 
 		colName := tagOpts[0].Name
@@ -196,12 +194,12 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 		if nameTag != optTag {
 			nameTagStr, ok := structTag.Lookup(nameTag)
 			if !ok {
-				panic(fmt.Errorf("nameTag specified but not found for field: %#v", field))
+				panic(errors.Errorf("nameTag specified but not found for field: %#v", field))
 			}
 
 			opts := tag.ParseOptions(nameTagStr)
 			if len(opts) == 0 || len(opts[0].Name) == 0 || opts[0].Name == "-" {
-				panic(fmt.Errorf("nameTag invalid for field: %#v", field))
+				panic(errors.Errorf("nameTag invalid for field: %#v", field))
 			}
 
 			colName = opts[0].Name

@@ -9,18 +9,19 @@ import (
 	"github.com/albenik-go/datamapper/codegen"
 )
 
-func Main(name string) int {
+func Main() int {
 	const defaultTagName = "db"
 
 	var (
-		sourceArg       = flag.String("src", "", "Input file name. Required.")
-		destinationArg  = flag.String("dst", "", "Output file. Defaults to stdout.")
-		pkgNameArg      = flag.String("pkg", "", "Package of the generated code. (Required!)")
-		typesArg        = flag.String("types", "", "Comma-separated list of types names.")
-		excludeTypesArg = flag.String("types_exclude", "", "Comma-separated list of types names to exclude.")
-		nameTagArg      = flag.String("nametag", defaultTagName, fmt.Sprintf("Struct tag key to get column name from. Defaults to %q.", defaultTagName))
-		optsTagArg      = flag.String("optstag", defaultTagName, fmt.Sprintf("Struct tag key to get field options from. Defaults to %q.", defaultTagName))
+		sourceArg      = flag.String("src", "", "Input file name. Required.")
+		destinationArg = flag.String("dst", "", "Output file. Defaults to stdout.")
+		pkgNameArg     = flag.String("pkg", "", "Package of the generated code. (Required!)")
+		includeArg     = flag.String("include", "", "Comma-separated list of types names.")
+		excludeArg     = flag.String("exclude", "", "Comma-separated list of types names to exclude.")
+		nameTagArg     = flag.String("nametag", defaultTagName, fmt.Sprintf("Struct tag key to get column name from. Defaults to %q.", defaultTagName))
+		optsTagArg     = flag.String("optstag", defaultTagName, fmt.Sprintf("Struct tag key to get field options from. Defaults to %q.", defaultTagName))
 	)
+
 	flag.Parse()
 
 	if *pkgNameArg == "" {
@@ -29,6 +30,7 @@ func Main(name string) int {
 	}
 
 	dest := os.Stdout
+
 	if *destinationArg != "" {
 		var err error
 		if dest, err = os.OpenFile(*destinationArg, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
@@ -38,22 +40,24 @@ func Main(name string) int {
 		defer dest.Close()
 	}
 
-	exclude := false
-	var types []string
-	if *typesArg != "" {
-		types = strings.Split(*typesArg, ",")
-	}
+	typesStr := *excludeArg
+	exclude := typesStr != ""
 
-	if len(*excludeTypesArg) > 0 {
-		if len(*typesArg) > 0 {
-			fmt.Fprintln(os.Stderr, "-types & -types_exclude cannot be used together")
+	if exclude {
+		if *includeArg != "" {
+			fmt.Fprintln(os.Stderr, "options -include & -exclude cannot be used together")
 			return 2
 		}
-		types = strings.Split(*excludeTypesArg, ",")
-		exclude = true
+	} else {
+		typesStr = *includeArg
 	}
 
-	if len(*sourceArg) == 0 {
+	var types []string
+	if typesStr != "" {
+		types = strings.Split(typesStr, ",")
+	}
+
+	if *sourceArg == "" {
 		*sourceArg = "."
 	}
 

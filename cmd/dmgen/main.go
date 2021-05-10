@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	os.Exit(cli.Main("dmgen"))
+	os.Exit(cli.Main())
 }

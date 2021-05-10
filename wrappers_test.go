@@ -1,19 +1,20 @@
-package datamapper
+package datamapper_test
 
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/albenik-go/datamapper"
 )
 
 func TestNullable_Scan(t *testing.T) {
 	var (
-		t1 = time.Date(2020, time.December, 31, 23, 59, 59, 0, time.UTC)
-		t2 time.Time
+		time1 = time.Date(2020, time.December, 31, 23, 59, 59, 0, time.UTC)
+		time2 time.Time
 	)
-	if err := convertAssign(&NullTime{V: &t2}, t1); err != nil {
-		t.Fatal(err)
-	}
-	if !t2.Equal(t1) {
-		t.Fatal("Time is not equal!", t1, "vs", t2)
-	}
+
+	require.NoError(t, datamapper.ConvertAssign(&datamapper.NullTime{V: &time2}, time1))
+	require.Equal(t, time2, time1)
 }

@@ -6,19 +6,21 @@ package datamapper
 import (
 	"database/sql"
 	"database/sql/driver"
+	stderrors "errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"time"
 
-	"golang.org/x/tools/go/ssa/interp/testdata/src/errors"
+	"github.com/pkg/errors"
 )
 
-var errNilPtr = errors.New("destination pointer is nil")
+var errNilPtr = stderrors.New("destination pointer is nil")
 
 func strconvErr(err error) error {
-	if ne, ok := err.(*strconv.NumError); ok {
-		return ne.Err
+	numErr := new(strconv.NumError)
+	if errors.As(err, &numErr) {
+		return numErr.Err
 	}
 	return err
 }
@@ -40,7 +42,7 @@ func asString(src interface{}) string {
 		return string(v)
 	}
 	rv := reflect.ValueOf(src)
-	switch rv.Kind() {
+	switch rv.Kind() { //nolint:exhaustive
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return strconv.FormatInt(rv.Int(), 10)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -56,7 +58,7 @@ func asString(src interface{}) string {
 }
 
 func asBytes(buf []byte, rv reflect.Value) (b []byte, ok bool) {
-	switch rv.Kind() {
+	switch rv.Kind() { //nolint:exhaustive
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return strconv.AppendInt(buf, rv.Int(), 10), true
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -74,8 +76,8 @@ func asBytes(buf []byte, rv reflect.Value) (b []byte, ok bool) {
 	return
 }
 
-// convertAssign copies to dest the value in src, converting it if possible.
-func convertAssign(dest, src interface{}) error {
+// ConvertAssign copies to dest the value in src, converting it if possible.
+func ConvertAssign(dest, src interface{}) error { //nolint:funlen,gocognit,gocyclo,cyclop
 	// Common cases, without reflect.
 	switch s := src.(type) {
 	case string:
@@ -175,7 +177,7 @@ func convertAssign(dest, src interface{}) error {
 	switch d := dest.(type) {
 	case *string:
 		sv = reflect.ValueOf(src)
-		switch sv.Kind() {
+		switch sv.Kind() { //nolint:exhaustive
 		case reflect.Bool,
 			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
@@ -192,13 +194,13 @@ func convertAssign(dest, src interface{}) error {
 	case *sql.RawBytes:
 		sv = reflect.ValueOf(src)
 		if b, ok := asBytes([]byte(*d)[:0], sv); ok {
-			*d = sql.RawBytes(b)
+			*d = b
 			return nil
 		}
 	case *bool:
 		bv, err := driver.Bool.ConvertValue(src)
 		if err == nil {
-			*d = bv.(bool)
+			*d = bv.(bool) //nolint:forcetypeassert
 		}
 		return err
 	case *interface{}:
@@ -243,46 +245,49 @@ func convertAssign(dest, src interface{}) error {
 	//
 	// This also allows scanning into user defined types such as "type Int int64".
 	// For symmetry, also check for string destination types.
-	switch dv.Kind() {
+	switch dv.Kind() { //nolint:exhaustive
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if src == nil {
-			return fmt.Errorf("converting NULL to %s is unsupported", dv.Kind())
+			return errors.Errorf("converting NULL to %s is unsupported", dv.Kind())
 		}
 		s := asString(src)
 		i64, err := strconv.ParseInt(s, 10, dv.Type().Bits())
 		if err != nil {
 			err = strconvErr(err)
-			return fmt.Errorf("converting driver.Value type %T (%q) to a %s: %v", src, s, dv.Kind(), err)
+			return errors.Errorf("converting driver.Value type %T (%q) to a %s: %v", src, s, dv.Kind(), err)
 		}
 		dv.SetInt(i64)
 		return nil
+
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if src == nil {
-			return fmt.Errorf("converting NULL to %s is unsupported", dv.Kind())
+			return errors.Errorf("converting NULL to %s is unsupported", dv.Kind())
 		}
 		s := asString(src)
 		u64, err := strconv.ParseUint(s, 10, dv.Type().Bits())
 		if err != nil {
 			err = strconvErr(err)
-			return fmt.Errorf("converting driver.Value type %T (%q) to a %s: %v", src, s, dv.Kind(), err)
+			return errors.Errorf("converting driver.Value type %T (%q) to a %s: %v", src, s, dv.Kind(), err)
 		}
 		dv.SetUint(u64)
 		return nil
+
 	case reflect.Float32, reflect.Float64:
 		if src == nil {
-			return fmt.Errorf("converting NULL to %s is unsupported", dv.Kind())
+			return errors.Errorf("converting NULL to %s is unsupported", dv.Kind())
 		}
 		s := asString(src)
 		f64, err := strconv.ParseFloat(s, dv.Type().Bits())
 		if err != nil {
 			err = strconvErr(err)
-			return fmt.Errorf("converting driver.Value type %T (%q) to a %s: %v", src, s, dv.Kind(), err)
+			return errors.Errorf("converting driver.Value type %T (%q) to a %s: %v", src, s, dv.Kind(), err)
 		}
 		dv.SetFloat(f64)
 		return nil
+
 	case reflect.String:
 		if src == nil {
-			return fmt.Errorf("converting NULL to %s is unsupported", dv.Kind())
+			return errors.Errorf("converting NULL to %s is unsupported", dv.Kind())
 		}
 		switch v := src.(type) {
 		case string:
@@ -294,5 +299,5 @@ func convertAssign(dest, src interface{}) error {
 		}
 	}
 
-	return fmt.Errorf("unsupported Scan, storing driver.Value type %T into type %T", src, dest)
+	return errors.Errorf("unsupported Scan, storing driver.Value type %T into type %T", src, dest)
 }
