@@ -37,7 +37,7 @@ type {{.ModelName}}Wrapper struct {
 }
 {{range .SelectFields}}
 func (m *{{$.ModelName}}Wrapper) {{.FieldName}}() datamapper.Field {
-	return datamapper.Field{Name: "{{.ColumnName}}", Ref: {{. | asRef}}}
+	return datamapper.Field{Name: "{{.ColumnName}}", Ref: {{. | asRef "&m"}}}
 }
 {{end}}
 
