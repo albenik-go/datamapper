@@ -65,6 +65,10 @@ func (m *{{.ModelName}}Mapper) EmptyClone() *{{.ModelName}}Mapper {
 	return New{{.ModelName}}Mapper(new({{.ModelName}}))
 }
 
+func (m *{{.ModelName}}Mapper) EmptyCloneAsInterface() interface{} {
+	return m.EmptyClone()
+}
+
 func (m *{{.ModelName}}Mapper) SelectColumns() []string {
 	return {{.ModelName}}MapperBase.SelectColumns
 }
