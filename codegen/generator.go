@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
+	"go/parser"
 	"go/token"
 	"io"
 	"reflect"
 	"runtime/debug"
 	"strings"
 
+	"github.com/pkg/errors"
 	"golang.org/x/tools/go/packages"
 
 	"github.com/albenik-go/datamapper/codegen/tag"
@@ -18,10 +20,8 @@ import (
 )
 
 // Generate generates mapper go code
-// `json:"column_name" col:",auto"` if nameTag=="json"
-// `col:"column_name,auto"`.
+// `name_tag:"column_name" opt_tag:",auto"` or `tag:"column_name,auto"` if tags are equal.
 func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nameTag, optTag string, out io.Writer) error {
-	buf := bytes.NewBuffer(nil)
 
 	conf := &packages.Config{
 		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo,
@@ -32,7 +32,7 @@ func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nam
 	}
 	pkgs, err := packages.Load(conf, srcName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "cannot load packages")
 	}
 	if len(pkgs) != 1 {
 		return fmt.Errorf("error: %d packages found", len(pkgs))
@@ -51,6 +51,7 @@ func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nam
 		dmgenVer = "ERROR! No version available as of built without module support!"
 	}
 
+	buf := bytes.NewBuffer(nil)
 	if err := template.WriteHeader(buf, &template.Header{Package: targetPkg, DmgenVersion: dmgenVer}); err != nil {
 		return err
 	}
@@ -74,6 +75,50 @@ func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nam
 	}
 
 	_, err = io.Copy(out, bytes.NewReader(src))
+	return err
+}
+
+// SimplifiedGenerate generates mapper go code
+// `name_tag:"column_name" opt_tag:",auto"` or `tag:"column_name,auto"` if tags are equal.
+func SimplifiedGenerate(filename, pkg, nameTag, optTag string, types []string, exclude bool, out io.Writer) error {
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, filename, nil, parser.AllErrors)
+	if err != nil {
+		return errors.Wrapf(err, "cannot parse source file %q", filename)
+	}
+
+	var dmgenVer string
+	if buildinfo, ok := debug.ReadBuildInfo(); ok {
+		dmgenVer = buildinfo.Main.Version
+	} else {
+		dmgenVer = "(NO VERSION INFO)"
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if err = template.WriteHeader(buf, &template.Header{Package: pkg, DmgenVersion: dmgenVer}); err != nil {
+		return err
+	}
+
+	var models []*template.ModelInfo
+	ast.Inspect(f, walkFunc(types, exclude, nameTag, optTag, &models))
+	for _, m := range models {
+		if err := template.WriteModel(buf, m); err != nil {
+			return err
+		}
+	}
+
+	var formattedCode []byte
+	if formattedCode, err = format.Source(buf.Bytes()); err != nil {
+		// Should never happen, but can arise when developing this code.
+		// The user can compile the output to see the error.
+		lines := strings.Split(buf.String(), "\n")
+		for n, l := range lines {
+			fmt.Printf("%03d: %s\n", n, l)
+		}
+		return errors.Wrap(err, "generated code format error")
+	}
+
+	_, err = io.Copy(out, bytes.NewReader(formattedCode))
 	return err
 }
 

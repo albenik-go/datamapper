@@ -10,30 +10,26 @@ import (
 )
 
 func Main(name string) int {
-	const defaultTagName = "col"
+	const defaultTagName = "db"
 
 	var (
 		sourceArg       = flag.String("src", "", "Input file name. Required.")
 		destinationArg  = flag.String("dst", "", "Output file. Defaults to stdout.")
-		packageArg      = flag.String("pkg", "", "Package of the generated code. Defaults to the package of the input.")
+		pkgNameArg      = flag.String("pkg", "", "Package of the generated code. (Required!)")
 		typesArg        = flag.String("types", "", "Comma-separated list of types names.")
 		excludeTypesArg = flag.String("types_exclude", "", "Comma-separated list of types names to exclude.")
-		buildTagsArgs   = flag.String("tags", "", "Comma-separated list of build tags to apply")
 		nameTagArg      = flag.String("nametag", defaultTagName, fmt.Sprintf("Struct tag key to get column name from. Defaults to %q.", defaultTagName))
-		optionsTagArg   = flag.String("optstag", defaultTagName, fmt.Sprintf("Struct tag key to get field options from. Defaults to %q.", defaultTagName))
+		optsTagArg      = flag.String("optstag", defaultTagName, fmt.Sprintf("Struct tag key to get field options from. Defaults to %q.", defaultTagName))
 	)
-
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", name)
-		fmt.Fprintf(os.Stderr, "\t%s [flags] -type T [directory]\n", name)
-		fmt.Fprintf(os.Stderr, "\t%s [flags] -type T files... # Must be a single package\n", name)
-		fmt.Fprintf(os.Stderr, "Flags:\n")
-		flag.PrintDefaults()
-	}
 	flag.Parse()
 
+	if *pkgNameArg == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
+
 	dest := os.Stdout
-	if len(*destinationArg) > 0 {
+	if *destinationArg != "" {
 		var err error
 		if dest, err = os.OpenFile(*destinationArg, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -44,7 +40,7 @@ func Main(name string) int {
 
 	exclude := false
 	var types []string
-	if len(*typesArg) > 0 {
+	if *typesArg != "" {
 		types = strings.Split(*typesArg, ",")
 	}
 
@@ -57,16 +53,11 @@ func Main(name string) int {
 		exclude = true
 	}
 
-	var tags []string
-	if len(*buildTagsArgs) > 0 {
-		tags = strings.Split(*buildTagsArgs, ",")
-	}
-
 	if len(*sourceArg) == 0 {
 		*sourceArg = "."
 	}
 
-	if err := codegen.Generate(*packageArg, *sourceArg, tags, types, exclude, *nameTagArg, *optionsTagArg, dest); err != nil {
+	if err := codegen.SimplifiedGenerate(*sourceArg, *pkgNameArg, *nameTagArg, *optsTagArg, types, exclude, dest); err != nil {
 		fmt.Fprintln(os.Stderr, "Generation failed:", err)
 		return 1
 	}
