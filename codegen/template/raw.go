@@ -95,8 +95,8 @@ func (m *{{.ModelName}}Mapper) UpdateFields() []interface{} {
 
 func (m *{{.ModelName}}Mapper) UpdateFieldsMap() map[string]interface{} {
 	return map[string]interface{}{
-		{{- range .SelectFields}}
-			"{{.ColumnName}}": &m.entity.{{.FieldName}},
+		{{- range .UpdateFields}}
+			"{{.ColumnName}}": {{. | asRef "&m"}},
 		{{- end}}
 	}
 }

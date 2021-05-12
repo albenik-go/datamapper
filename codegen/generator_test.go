@@ -121,10 +121,9 @@ func (m *ModelMapper) UpdateFields() []interface{} {
 
 func (m *ModelMapper) UpdateFieldsMap() map[string]interface{} {
 	return map[string]interface{}{
-		"id":           &m.entity.ID,
 		"string":       &m.entity.String,
 		"bool":         &m.entity.Bool,
-		"wrapped_bool": &m.entity.WrappedBool,
+		"wrapped_bool": &datamapper.IntBool{V: &m.entity.WrappedBool},
 		"time":         &m.entity.Time,
 	}
 }
