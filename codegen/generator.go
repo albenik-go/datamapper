@@ -135,7 +135,7 @@ func walkFunc(types []string, exclude bool, nameTag, optTag string, models *[]*t
 			}
 
 			info := &template.ModelInfo{
-				ModelName:    typeName,
+				EntityType:   typeName,
 				SelectFields: make([]*template.FieldInfo, 0, len(typeInfo.Fields.List)),
 				InsertFields: make([]*template.FieldInfo, 0, len(typeInfo.Fields.List)),
 				UpdateFields: make([]*template.FieldInfo, 0, len(typeInfo.Fields.List)),

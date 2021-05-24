@@ -6,7 +6,7 @@ type Header struct {
 }
 
 type ModelInfo struct {
-	ModelName string
+	EntityType string
 
 	SelectFields []*FieldInfo // All fields
 	InsertFields []*FieldInfo

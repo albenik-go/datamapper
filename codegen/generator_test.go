@@ -43,33 +43,33 @@ var ModelModel = struct {
 	Time:        "time",
 }
 
-type ModelWrapper struct {
+type ModelEntityWrapper struct {
 	entity *Model
 }
 
-func (m *ModelWrapper) ID() datamapper.Field {
+func (m *ModelEntityWrapper) ID() datamapper.Field {
 	return datamapper.Field{Name: "id", Ref: &m.entity.ID}
 }
 
-func (m *ModelWrapper) String() datamapper.Field {
+func (m *ModelEntityWrapper) String() datamapper.Field {
 	return datamapper.Field{Name: "string", Ref: &m.entity.String}
 }
 
-func (m *ModelWrapper) Bool() datamapper.Field {
+func (m *ModelEntityWrapper) Bool() datamapper.Field {
 	return datamapper.Field{Name: "bool", Ref: &m.entity.Bool}
 }
 
-func (m *ModelWrapper) WrappedBool() datamapper.Field {
+func (m *ModelEntityWrapper) WrappedBool() datamapper.Field {
 	return datamapper.Field{Name: "wrapped_bool", Ref: &datamapper.IntBool{V: &m.entity.WrappedBool}}
 }
 
-func (m *ModelWrapper) Time() datamapper.Field {
+func (m *ModelEntityWrapper) Time() datamapper.Field {
 	return datamapper.Field{Name: "time", Ref: &m.entity.Time}
 }
 
 type ModelMapper struct {
 	entity *Model
-	fields *ModelWrapper
+	fields *ModelEntityWrapper
 
 	selectFields []interface{}
 	insertFields []interface{}
@@ -77,9 +77,13 @@ type ModelMapper struct {
 }
 
 func NewModelMapper(e *Model) *ModelMapper {
+	if e == nil {
+		e = new(Model)
+	}
+
 	return &ModelMapper{
 		entity: e,
-		fields: &ModelWrapper{entity: e},
+		fields: &ModelEntityWrapper{entity: e},
 
 		selectFields: []interface{}{&e.ID, &e.String, &e.Bool, &datamapper.IntBool{V: &e.WrappedBool}, &e.Time},
 		insertFields: []interface{}{&e.String, &e.Bool, &datamapper.IntBool{V: &e.WrappedBool}, &e.Time},
@@ -128,7 +132,7 @@ func (m *ModelMapper) UpdateFieldsMap() map[string]interface{} {
 	}
 }
 
-func (m *ModelMapper) Model() *ModelWrapper {
+func (m *ModelMapper) Model() *ModelEntityWrapper {
 	return m.fields
 }
 

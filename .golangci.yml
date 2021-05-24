@@ -31,6 +31,7 @@ linters:
   disable:
     - exhaustivestruct
     - gochecknoglobals
+    - golint # The linter 'golint' is deprecated (since v1.41.0) due to: The repository of the linter has been archived by the owner.  Replaced by revive.
     - lll
     - maligned    # The linter 'maligned' is deprecated (since v1.38.0) due to: The repository of the linter has been archived by the owner.  Replaced by govet 'fieldalignment'.
     - nlreturn

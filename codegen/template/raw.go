@@ -11,8 +11,8 @@ import (
 
 const body = `
 
-// {{.ModelName}}MapperBase shared column list is always the same for all mapper instances.
-var {{.ModelName}}MapperBase = struct {
+// {{.EntityType}}MapperBase shared column list is always the same for all mapper instances.
+var {{.EntityType}}MapperBase = struct {
 	SelectColumns []string
 	InsertColumns []string
 	UpdateColumns []string
@@ -22,7 +22,7 @@ var {{.ModelName}}MapperBase = struct {
 	UpdateColumns: []string{{.UpdateFields | asColumnsSlice}},
 }
 
-var {{.ModelName}}Model = struct {
+var {{.EntityType}}Model = struct {
 {{- range .SelectFields}}
 	{{.FieldName}} string
 {{- end}}
@@ -32,28 +32,32 @@ var {{.ModelName}}Model = struct {
 {{- end}}
 }
 
-type {{.ModelName}}Wrapper struct {
-	entity *{{.ModelName}}
+type {{.EntityType}}EntityWrapper struct {
+	entity *{{.EntityType}}
 }
 {{range .SelectFields}}
-func (m *{{$.ModelName}}Wrapper) {{.FieldName}}() datamapper.Field {
+func (m *{{$.EntityType}}EntityWrapper) {{.FieldName}}() datamapper.Field {
 	return datamapper.Field{Name: "{{.ColumnName}}", Ref: {{. | asRef "&m"}}}
 }
 {{end}}
 
-type {{.ModelName}}Mapper struct {
-	entity *{{.ModelName}}
-	fields *{{.ModelName}}Wrapper
+type {{.EntityType}}Mapper struct {
+	entity *{{.EntityType}}
+	fields *{{.EntityType}}EntityWrapper
 
 	selectFields []interface{}
 	insertFields []interface{}
 	updateFields []interface{}
 }
 
-func New{{.ModelName}}Mapper(e *{{.ModelName}}) *{{.ModelName}}Mapper {
-	return &{{.ModelName}}Mapper{
+func New{{.EntityType}}Mapper(e *{{.EntityType}}) *{{.EntityType}}Mapper {
+	if e == nil {
+		e = new({{.EntityType}})
+	}
+
+	return &{{.EntityType}}Mapper{
 		entity:  e,
-		fields: &{{.ModelName}}Wrapper{entity: e},
+		fields: &{{.EntityType}}EntityWrapper{entity: e},
 
 		selectFields: []interface{}{{.SelectFields | asRefsSlice "&e"}},
 		insertFields: []interface{}{{.InsertFields | asRefsSlice "&e"}},
@@ -61,39 +65,39 @@ func New{{.ModelName}}Mapper(e *{{.ModelName}}) *{{.ModelName}}Mapper {
 	}
 }
 
-func (m *{{.ModelName}}Mapper) EmptyClone() *{{.ModelName}}Mapper {
-	return New{{.ModelName}}Mapper(new({{.ModelName}}))
+func (m *{{.EntityType}}Mapper) EmptyClone() *{{.EntityType}}Mapper {
+	return New{{.EntityType}}Mapper(new({{.EntityType}}))
 }
 
-func (m *{{.ModelName}}Mapper) UntypedEmptyClone() interface{} {
+func (m *{{.EntityType}}Mapper) UntypedEmptyClone() interface{} {
 	return m.EmptyClone()
 }
 
-func (m *{{.ModelName}}Mapper) SelectColumns() []string {
-	return {{.ModelName}}MapperBase.SelectColumns
+func (m *{{.EntityType}}Mapper) SelectColumns() []string {
+	return {{.EntityType}}MapperBase.SelectColumns
 }
 
-func (m *{{.ModelName}}Mapper) SelectFields() []interface{} {
+func (m *{{.EntityType}}Mapper) SelectFields() []interface{} {
 	return m.selectFields
 }
 
-func (m *{{.ModelName}}Mapper) InsertColumns() []string {
-	return {{.ModelName}}MapperBase.InsertColumns
+func (m *{{.EntityType}}Mapper) InsertColumns() []string {
+	return {{.EntityType}}MapperBase.InsertColumns
 }
 
-func (m *{{.ModelName}}Mapper) InsertFields() []interface{} {
+func (m *{{.EntityType}}Mapper) InsertFields() []interface{} {
 	return m.insertFields
 }
 
-func (m *{{.ModelName}}Mapper) UpdateColumns() []string {
-	return {{.ModelName}}MapperBase.UpdateColumns
+func (m *{{.EntityType}}Mapper) UpdateColumns() []string {
+	return {{.EntityType}}MapperBase.UpdateColumns
 }
 
-func (m *{{.ModelName}}Mapper) UpdateFields() []interface{} {
+func (m *{{.EntityType}}Mapper) UpdateFields() []interface{} {
 	return m.updateFields
 }
 
-func (m *{{.ModelName}}Mapper) UpdateFieldsMap() map[string]interface{} {
+func (m *{{.EntityType}}Mapper) UpdateFieldsMap() map[string]interface{} {
 	return map[string]interface{}{
 		{{- range .UpdateFields}}
 			"{{.ColumnName}}": {{. | asRef "&m"}},
@@ -101,15 +105,15 @@ func (m *{{.ModelName}}Mapper) UpdateFieldsMap() map[string]interface{} {
 	}
 }
 
-func (m *{{.ModelName}}Mapper) Model() *{{.ModelName}}Wrapper {
+func (m *{{.EntityType}}Mapper) Model() *{{.EntityType}}EntityWrapper {
 	return m.fields
 }
 
-func (m *{{.ModelName}}Mapper) Entity() *{{.ModelName}} {
+func (m *{{.EntityType}}Mapper) Entity() *{{.EntityType}} {
 	return m.entity
 }
 
-func (m *{{.ModelName}}Mapper) UntypedEntity() interface{} {
+func (m *{{.EntityType}}Mapper) UntypedEntity() interface{} {
 	return m.entity
 }
 `
