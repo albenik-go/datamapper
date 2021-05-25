@@ -29,7 +29,7 @@ var ModelMapperBase = struct {
 	UpdateColumns: []string{"string", "bool", "wrapped_bool", "time"},
 }
 
-var ModelModel = struct {
+var ModelModelFields = struct {
 	ID          string
 	String      string
 	Bool        string
@@ -43,37 +43,33 @@ var ModelModel = struct {
 	Time:        "time",
 }
 
-type ModelEntityWrapper struct {
+type ModelModel struct {
 	entity *Model
 }
 
-func (m *ModelEntityWrapper) AutoincrementField() datamapper.Field {
+func (m *ModelModel) ID() datamapper.Field {
 	return datamapper.Field{Name: "id", Ref: &m.entity.ID}
 }
 
-func (m *ModelEntityWrapper) ID() datamapper.Field {
-	return datamapper.Field{Name: "id", Ref: &m.entity.ID}
-}
-
-func (m *ModelEntityWrapper) String() datamapper.Field {
+func (m *ModelModel) String() datamapper.Field {
 	return datamapper.Field{Name: "string", Ref: &m.entity.String}
 }
 
-func (m *ModelEntityWrapper) Bool() datamapper.Field {
+func (m *ModelModel) Bool() datamapper.Field {
 	return datamapper.Field{Name: "bool", Ref: &m.entity.Bool}
 }
 
-func (m *ModelEntityWrapper) WrappedBool() datamapper.Field {
+func (m *ModelModel) WrappedBool() datamapper.Field {
 	return datamapper.Field{Name: "wrapped_bool", Ref: &datamapper.IntBool{V: &m.entity.WrappedBool}}
 }
 
-func (m *ModelEntityWrapper) Time() datamapper.Field {
+func (m *ModelModel) Time() datamapper.Field {
 	return datamapper.Field{Name: "time", Ref: &m.entity.Time}
 }
 
 type ModelMapper struct {
 	entity *Model
-	fields *ModelEntityWrapper
+	model  *ModelModel
 
 	selectFields []interface{}
 	insertFields []interface{}
@@ -87,7 +83,7 @@ func NewModelMapper(e *Model) *ModelMapper {
 
 	return &ModelMapper{
 		entity: e,
-		fields: &ModelEntityWrapper{entity: e},
+		model:  &ModelModel{entity: e},
 
 		selectFields: []interface{}{&e.ID, &e.String, &e.Bool, &datamapper.IntBool{V: &e.WrappedBool}, &e.Time},
 		insertFields: []interface{}{&e.String, &e.Bool, &datamapper.IntBool{V: &e.WrappedBool}, &e.Time},
@@ -128,8 +124,12 @@ func (m *ModelMapper) UpdateFieldsMap() map[string]interface{} {
 	}
 }
 
-func (m *ModelMapper) Model() *ModelEntityWrapper {
-	return m.fields
+func (m *ModelMapper) AutoincrementField() datamapper.Field {
+	return datamapper.Field{Name: "id", Ref: &m.model.entity.ID}
+}
+
+func (m *ModelMapper) Model() *ModelModel {
+	return m.model
 }
 
 func (m *ModelMapper) Entity() *Model {

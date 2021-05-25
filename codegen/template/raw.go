@@ -22,7 +22,7 @@ var {{.EntityType}}MapperBase = struct {
 	UpdateColumns: []string{{.UpdateFields | asColumnsSlice}},
 }
 
-var {{.EntityType}}Model = struct {
+var {{.EntityType}}ModelFields = struct {
 {{- range .SelectFields}}
 	{{.FieldName}} string
 {{- end}}
@@ -32,23 +32,18 @@ var {{.EntityType}}Model = struct {
 {{- end}}
 }
 
-type {{.EntityType}}EntityWrapper struct {
+type {{.EntityType}}Model struct {
 	entity *{{.EntityType}}
 }
-{{if .AutoincrementField}}
-func (m *{{$.EntityType}}EntityWrapper) AutoincrementField() datamapper.Field {
-	return datamapper.Field{Name: "{{.AutoincrementField.ColumnName}}", Ref: {{.AutoincrementField | asRef "&m"}}}
-}
-{{end}}
 {{range .SelectFields}}
-func (m *{{$.EntityType}}EntityWrapper) {{.FieldName}}() datamapper.Field {
+func (m *{{$.EntityType}}Model) {{.FieldName}}() datamapper.Field {
 	return datamapper.Field{Name: "{{.ColumnName}}", Ref: {{. | asRef "&m"}}}
 }
 {{end}}
 
 type {{.EntityType}}Mapper struct {
 	entity *{{.EntityType}}
-	fields *{{.EntityType}}EntityWrapper
+	model  *{{.EntityType}}Model
 
 	selectFields []interface{}
 	insertFields []interface{}
@@ -62,7 +57,7 @@ func New{{.EntityType}}Mapper(e *{{.EntityType}}) *{{.EntityType}}Mapper {
 
 	return &{{.EntityType}}Mapper{
 		entity:  e,
-		fields: &{{.EntityType}}EntityWrapper{entity: e},
+		model:   &{{.EntityType}}Model{entity: e},
 
 		selectFields: []interface{}{{.SelectFields | asRefsSlice "&e"}},
 		insertFields: []interface{}{{.InsertFields | asRefsSlice "&e"}},
@@ -101,9 +96,14 @@ func (m *{{.EntityType}}Mapper) UpdateFieldsMap() map[string]interface{} {
 		{{- end}}
 	}
 }
+{{if .AutoincrementField}}
+func (m *{{.EntityType}}Mapper) AutoincrementField() datamapper.Field {
+	return datamapper.Field{Name: "{{.AutoincrementField.ColumnName}}", Ref: {{.AutoincrementField | asRef "&m.model"}}}
+}
+{{end}}
 
-func (m *{{.EntityType}}Mapper) Model() *{{.EntityType}}EntityWrapper {
-	return m.fields
+func (m *{{.EntityType}}Mapper) Model() *{{.EntityType}}Model {
+	return m.model
 }
 
 func (m *{{.EntityType}}Mapper) Entity() *{{.EntityType}} {
