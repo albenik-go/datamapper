@@ -35,6 +35,11 @@ var {{.EntityType}}Model = struct {
 type {{.EntityType}}EntityWrapper struct {
 	entity *{{.EntityType}}
 }
+{{if .AutoincrementField}}
+func (m *{{$.EntityType}}EntityWrapper) AutoincrementField() datamapper.Field {
+	return datamapper.Field{Name: "{{.AutoincrementField.ColumnName}}", Ref: {{.AutoincrementField | asRef "&m"}}}
+}
+{{end}}
 {{range .SelectFields}}
 func (m *{{$.EntityType}}EntityWrapper) {{.FieldName}}() datamapper.Field {
 	return datamapper.Field{Name: "{{.ColumnName}}", Ref: {{. | asRef "&m"}}}

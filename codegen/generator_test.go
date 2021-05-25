@@ -47,6 +47,10 @@ type ModelEntityWrapper struct {
 	entity *Model
 }
 
+func (m *ModelEntityWrapper) AutoincrementField() datamapper.Field {
+	return datamapper.Field{Name: "id", Ref: &m.entity.ID}
+}
+
 func (m *ModelEntityWrapper) ID() datamapper.Field {
 	return datamapper.Field{Name: "id", Ref: &m.entity.ID}
 }
