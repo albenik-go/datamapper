@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"go.uber.org/multierr"
 
 	"github.com/albenik-go/datamapper/codegen/tag"
 	"github.com/albenik-go/datamapper/codegen/template"
@@ -53,8 +54,13 @@ func SimplifiedGenerate(filename, pkg, nameTag, optTag string, types []string, e
 		// The user can compile the output to see the error.
 		lines := strings.Split(buf.String(), "\n")
 		for n, l := range lines {
-			fmt.Printf("%03d: %s\n", n, l) //nolint:forbidigo
+			fmt.Printf("%03d: %s\n", n+1, l) //nolint:forbidigo
 		}
+
+		if _, copyErr := io.Copy(out, buf); copyErr != nil {
+			err = multierr.Append(err, copyErr)
+		}
+
 		return errors.Wrap(err, "generated code format error")
 	}
 

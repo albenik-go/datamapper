@@ -15,6 +15,9 @@ const generated = `// Generated code! DO NOT EDIT!.
 package mapper
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/albenik-go/datamapper"
 )
 
@@ -91,6 +94,10 @@ func NewModelMapper(e *Model) *ModelMapper {
 	}
 }
 
+func (m *ModelMapper) SetEntity(e *Model) {
+	m.entity = e
+}
+
 func (m *ModelMapper) SelectColumns() []string {
 	return ModelMapperBase.SelectColumns
 }
@@ -128,6 +135,19 @@ func (m *ModelMapper) AutoincrementField() datamapper.Field {
 	return datamapper.Field{Name: "id", Ref: &m.model.entity.ID}
 }
 
+func (m *ModelMapper) SetLastInsertID(v int64) {
+	m.entity.ID = v
+}
+
+func (m *ModelMapper) UntypedSetLastInsertID(v interface{}) error {
+	vv := reflect.ValueOf(v)
+	if vv.Type().AssignableTo(reflect.TypeOf(m.entity.ID)) {
+		reflect.ValueOf(&m.entity.ID).Elem().Set(vv)
+		return nil
+	}
+	return fmt.Errorf("%T passed while %T expected", v, m.entity.ID)
+}
+
 func (m *ModelMapper) Model() *ModelModel {
 	return m.model
 }
@@ -136,20 +156,16 @@ func (m *ModelMapper) Entity() *Model {
 	return m.entity
 }
 
-func (m *ModelMapper) EmptyClone() *ModelMapper {
-	return NewModelMapper(new(Model))
-}
-
 func (m *ModelMapper) UntypedEntity() interface{} {
 	return m.entity
 }
 
-func (m *ModelMapper) UntypedEmptyClone() interface{} {
-	return m.EmptyClone()
+func (m *ModelMapper) EmptyClone() *ModelMapper {
+	return NewModelMapper(new(Model))
 }
 
-func (m *ModelMapper) SetID(id int64) {
-	m.entity.ID = id
+func (m *ModelMapper) UntypedEmptyClone() interface{} {
+	return m.EmptyClone()
 }
 `
 

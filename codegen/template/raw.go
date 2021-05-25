@@ -6,6 +6,9 @@ const header = `// Generated code! DO NOT EDIT!.
 package {{.Package}}
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/albenik-go/datamapper"
 )`
 
@@ -65,6 +68,10 @@ func New{{.EntityType}}Mapper(e *{{.EntityType}}) *{{.EntityType}}Mapper {
 	}
 }
 
+func (m *{{.EntityType}}Mapper) SetEntity(e *{{.EntityType}}) {
+	m.entity = e
+}
+
 func (m *{{.EntityType}}Mapper) SelectColumns() []string {
 	return {{.EntityType}}MapperBase.SelectColumns
 }
@@ -100,6 +107,19 @@ func (m *{{.EntityType}}Mapper) UpdateFieldsMap() map[string]interface{} {
 func (m *{{.EntityType}}Mapper) AutoincrementField() datamapper.Field {
 	return datamapper.Field{Name: "{{.AutoincrementField.ColumnName}}", Ref: {{.AutoincrementField | asRef "&m.model"}}}
 }
+
+func (m *{{.EntityType}}Mapper) SetLastInsertID(v {{.AutoincrementField.FieldType}}) {
+	m.entity.{{.AutoincrementField.FieldName}} = v
+}
+
+func (m *{{.EntityType}}Mapper) UntypedSetLastInsertID(v interface{}) error {
+	vv := reflect.ValueOf(v)
+	if vv.Type().AssignableTo(reflect.TypeOf(m.entity.{{.AutoincrementField.FieldName}})) {
+		reflect.ValueOf(&m.entity.{{.AutoincrementField.FieldName}}).Elem().Set(vv)
+		return nil
+	}
+	return fmt.Errorf("%T passed while %T expected", v, m.entity.{{.AutoincrementField.FieldName}})
+}
 {{end}}
 
 func (m *{{.EntityType}}Mapper) Model() *{{.EntityType}}Model {
@@ -110,21 +130,17 @@ func (m *{{.EntityType}}Mapper) Entity() *{{.EntityType}} {
 	return m.entity
 }
 
-func (m *{{.EntityType}}Mapper) EmptyClone() *{{.EntityType}}Mapper {
-	return New{{.EntityType}}Mapper(new({{.EntityType}}))
-}
-
 func (m *{{.EntityType}}Mapper) UntypedEntity() interface{} {
 	return m.entity
+}
+
+func (m *{{.EntityType}}Mapper) EmptyClone() *{{.EntityType}}Mapper {
+	return New{{.EntityType}}Mapper(new({{.EntityType}}))
 }
 
 func (m *{{.EntityType}}Mapper) UntypedEmptyClone() interface{} {
 	return m.EmptyClone()
 }
-{{if .AutoincrementField}}
-func (m *{{.EntityType}}Mapper) SetID(id {{.AutoincrementField.FieldType}}) {
-	m.entity.{{.AutoincrementField.FieldName}} = id
-}{{end}}
 `
 
 var (
