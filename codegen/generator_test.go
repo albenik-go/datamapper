@@ -91,14 +91,6 @@ func NewModelMapper(e *Model) *ModelMapper {
 	}
 }
 
-func (m *ModelMapper) EmptyClone() *ModelMapper {
-	return NewModelMapper(new(Model))
-}
-
-func (m *ModelMapper) UntypedEmptyClone() interface{} {
-	return m.EmptyClone()
-}
-
 func (m *ModelMapper) SelectColumns() []string {
 	return ModelMapperBase.SelectColumns
 }
@@ -140,8 +132,20 @@ func (m *ModelMapper) Entity() *Model {
 	return m.entity
 }
 
+func (m *ModelMapper) EmptyClone() *ModelMapper {
+	return NewModelMapper(new(Model))
+}
+
 func (m *ModelMapper) UntypedEntity() interface{} {
 	return m.entity
+}
+
+func (m *ModelMapper) UntypedEmptyClone() interface{} {
+	return m.EmptyClone()
+}
+
+func (m *ModelMapper) SetID(id int64) {
+	m.entity.ID = id
 }
 `
 

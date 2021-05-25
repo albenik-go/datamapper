@@ -13,69 +13,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"golang.org/x/tools/go/packages"
 
 	"github.com/albenik-go/datamapper/codegen/tag"
 	"github.com/albenik-go/datamapper/codegen/template"
 )
-
-// Generate generates mapper go code
-// `name_tag:"column_name" opt_tag:",auto"` or `tag:"column_name,auto"` if tags are equal.
-func Generate(targetPkg, srcName string, tags, types []string, exclude bool, nameTag, optTag string, out io.Writer) error {
-	conf := &packages.Config{
-		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo,
-		Tests: false,
-	}
-	if len(tags) > 0 {
-		conf.BuildFlags = []string{"-tags " + strings.Join(tags, ",")}
-	}
-	pkgs, err := packages.Load(conf, srcName)
-	if err != nil {
-		return errors.Wrap(err, "cannot load packages")
-	}
-	if len(pkgs) != 1 {
-		return errors.Errorf("error: %d packages found", len(pkgs))
-	}
-
-	pkg := pkgs[0]
-
-	if len(targetPkg) == 0 {
-		targetPkg = pkg.Name
-	}
-
-	var dmgenVer string
-	if buildinfo, ok := debug.ReadBuildInfo(); ok {
-		dmgenVer = buildinfo.Main.Version
-	} else {
-		dmgenVer = "ERROR! No version available as of built without module support!"
-	}
-
-	buf := bytes.NewBuffer(nil)
-	if err := template.WriteHeader(buf, &template.Header{Package: targetPkg, DmgenVersion: dmgenVer}); err != nil {
-		return err
-	}
-
-	for _, f := range pkg.Syntax {
-		var models []*template.ModelInfo
-		ast.Inspect(f, walkFunc(types, exclude, nameTag, optTag, &models))
-		for _, m := range models {
-			if err := template.WriteModel(buf, m); err != nil {
-				return err
-			}
-		}
-	}
-
-	src, err := format.Source(buf.Bytes())
-	if err != nil {
-		// Should never happen, but can arise when developing this code.
-		// The user can compile the output to see the error.
-		fmt.Println(buf.String()) //nolint:forbidigo
-		return err
-	}
-
-	_, err = io.Copy(out, bytes.NewReader(src))
-	return err
-}
 
 // SimplifiedGenerate generates mapper go code
 // `name_tag:"column_name" opt_tag:",auto"` or `tag:"column_name,auto"` if tags are equal.
@@ -151,15 +92,30 @@ func walkFunc(types []string, exclude bool, nameTag, optTag string, models *[]*t
 func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, optTag string) { //nolint:cyclop,gocognit
 	for _, field := range expr.Fields.List {
 		// processing embedded types if any
-		var obj *ast.Object
+		var (
+			indent *ast.Ident
+			obj    *ast.Object
+		)
 		switch ftype := field.Type.(type) {
 		case *ast.Ident:
+			indent = ftype
 			obj = ftype.Obj
+		case *ast.SelectorExpr:
+			if xIdent, ok := ftype.X.(*ast.Ident); ok {
+				indent = xIdent
+				obj = xIdent.Obj
+			}
 		case *ast.StarExpr:
-			if ident, ok := ftype.X.(*ast.Ident); ok {
-				obj = ident.Obj
+			if xIdent, ok := ftype.X.(*ast.Ident); ok {
+				indent = xIdent
+				obj = xIdent.Obj
 			}
 		}
+
+		if indent == nil {
+			panic(errors.Errorf("unexpected field type descriptor %T", field.Type))
+		}
+
 		if obj != nil && obj.Kind == ast.Typ {
 			if _, stype, ok := getStructType(obj.Decl, false, nil); ok {
 				collectModelInfo(info, stype, nameTag, optTag)
@@ -207,6 +163,7 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 
 		f := &template.FieldInfo{
 			FieldName:  field.Names[0].Name,
+			FieldType:  indent.Name,
 			ColumnName: colName,
 		}
 
@@ -215,7 +172,9 @@ func collectModelInfo(info *template.ModelInfo, expr *ast.StructType, nameTag, o
 		}
 
 		info.SelectFields = append(info.SelectFields, f)
-		if tagOpts.Lookup("auto") == nil {
+		if tagOpts.Lookup("auto") != nil {
+			info.AutoincrementField = f
+		} else {
 			info.InsertFields = append(info.InsertFields, f)
 			info.UpdateFields = append(info.UpdateFields, f)
 		}

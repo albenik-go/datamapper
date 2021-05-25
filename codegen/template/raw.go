@@ -65,14 +65,6 @@ func New{{.EntityType}}Mapper(e *{{.EntityType}}) *{{.EntityType}}Mapper {
 	}
 }
 
-func (m *{{.EntityType}}Mapper) EmptyClone() *{{.EntityType}}Mapper {
-	return New{{.EntityType}}Mapper(new({{.EntityType}}))
-}
-
-func (m *{{.EntityType}}Mapper) UntypedEmptyClone() interface{} {
-	return m.EmptyClone()
-}
-
 func (m *{{.EntityType}}Mapper) SelectColumns() []string {
 	return {{.EntityType}}MapperBase.SelectColumns
 }
@@ -113,9 +105,21 @@ func (m *{{.EntityType}}Mapper) Entity() *{{.EntityType}} {
 	return m.entity
 }
 
+func (m *{{.EntityType}}Mapper) EmptyClone() *{{.EntityType}}Mapper {
+	return New{{.EntityType}}Mapper(new({{.EntityType}}))
+}
+
 func (m *{{.EntityType}}Mapper) UntypedEntity() interface{} {
 	return m.entity
 }
+
+func (m *{{.EntityType}}Mapper) UntypedEmptyClone() interface{} {
+	return m.EmptyClone()
+}
+{{if .AutoincrementField}}
+func (m *{{.EntityType}}Mapper) SetID(id {{.AutoincrementField.FieldType}}) {
+	m.entity.{{.AutoincrementField.FieldName}} = id
+}{{end}}
 `
 
 var (

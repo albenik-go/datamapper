@@ -6,15 +6,16 @@ type Header struct {
 }
 
 type ModelInfo struct {
-	EntityType string
-
-	SelectFields []*FieldInfo // All fields
-	InsertFields []*FieldInfo
-	UpdateFields []*FieldInfo
+	EntityType         string
+	AutoincrementField *FieldInfo
+	SelectFields       []*FieldInfo // All fields
+	InsertFields       []*FieldInfo
+	UpdateFields       []*FieldInfo
 }
 
 type FieldInfo struct {
 	FieldName  string
+	FieldType  string
 	ColumnName string
 	Wrapper    string
 }
