@@ -39,7 +39,7 @@ func asRefsSliceFilter(receiver string, fields []*FieldInfo) string {
 }
 
 func asRefFilter(receiver string, field *FieldInfo) string {
-	s := fmt.Sprintf("%s.entity.%s", receiver, field.FieldName)
+	s := fmt.Sprintf("%s.%s", receiver, field.FieldName)
 	if len(field.Wrapper) > 0 {
 		s = fmt.Sprintf("&datamapper.%s{V: %s}", field.Wrapper, s)
 	}

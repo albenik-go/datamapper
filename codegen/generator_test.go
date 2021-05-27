@@ -32,13 +32,15 @@ var ModelMapperBase = struct {
 	UpdateColumns: []string{"string", "bool", "wrapped_bool", "time"},
 }
 
-var ModelModelFields = struct {
+type ModelModelFields struct {
 	ID          string
 	String      string
 	Bool        string
 	WrappedBool string
 	Time        string
-}{
+}
+
+var ModelModel = ModelModelFields{
 	ID:          "id",
 	String:      "string",
 	Bool:        "bool",
@@ -46,33 +48,9 @@ var ModelModelFields = struct {
 	Time:        "time",
 }
 
-type ModelModel struct {
-	entity *Model
-}
-
-func (m *ModelModel) ID() datamapper.Field {
-	return datamapper.Field{Name: "id", Ref: &m.entity.ID}
-}
-
-func (m *ModelModel) String() datamapper.Field {
-	return datamapper.Field{Name: "string", Ref: &m.entity.String}
-}
-
-func (m *ModelModel) Bool() datamapper.Field {
-	return datamapper.Field{Name: "bool", Ref: &m.entity.Bool}
-}
-
-func (m *ModelModel) WrappedBool() datamapper.Field {
-	return datamapper.Field{Name: "wrapped_bool", Ref: &datamapper.IntBool{V: &m.entity.WrappedBool}}
-}
-
-func (m *ModelModel) Time() datamapper.Field {
-	return datamapper.Field{Name: "time", Ref: &m.entity.Time}
-}
-
 type ModelMapper struct {
 	entity *Model
-	model  *ModelModel
+	model  *ModelModelFields
 
 	selectFields []interface{}
 	insertFields []interface{}
@@ -86,7 +64,7 @@ func NewModelMapper(e *Model) *ModelMapper {
 
 	return &ModelMapper{
 		entity: e,
-		model:  &ModelModel{entity: e},
+		model:  &ModelModel,
 
 		selectFields: []interface{}{&e.ID, &e.String, &e.Bool, &datamapper.IntBool{V: &e.WrappedBool}, &e.Time},
 		insertFields: []interface{}{&e.String, &e.Bool, &datamapper.IntBool{V: &e.WrappedBool}, &e.Time},
@@ -132,7 +110,7 @@ func (m *ModelMapper) UpdateFieldsMap() map[string]interface{} {
 }
 
 func (m *ModelMapper) AutoincrementField() datamapper.Field {
-	return datamapper.Field{Name: "id", Ref: &m.model.entity.ID}
+	return datamapper.Field{Name: "id", Ref: &m.entity.ID}
 }
 
 func (m *ModelMapper) SetLastInsertID(v int64) {
@@ -148,7 +126,7 @@ func (m *ModelMapper) UntypedSetLastInsertID(v interface{}) error {
 	return fmt.Errorf("%T passed while %T expected", v, m.entity.ID)
 }
 
-func (m *ModelMapper) Model() *ModelModel {
+func (m *ModelMapper) Model() *ModelModelFields {
 	return m.model
 }
 

@@ -25,28 +25,21 @@ var {{.EntityType}}MapperBase = struct {
 	UpdateColumns: []string{{.UpdateFields | asColumnsSlice}},
 }
 
-var {{.EntityType}}ModelFields = struct {
+type {{.EntityType}}ModelFields struct {
 {{- range .SelectFields}}
 	{{.FieldName}} string
 {{- end}}
-}{
+}
+
+var {{.EntityType}}Model = {{.EntityType}}ModelFields {
 {{- range .SelectFields}}
 	{{.FieldName}}: "{{.ColumnName}}",
 {{- end}}
 }
 
-type {{.EntityType}}Model struct {
-	entity *{{.EntityType}}
-}
-{{range .SelectFields}}
-func (m *{{$.EntityType}}Model) {{.FieldName}}() datamapper.Field {
-	return datamapper.Field{Name: "{{.ColumnName}}", Ref: {{. | asRef "&m"}}}
-}
-{{end}}
-
 type {{.EntityType}}Mapper struct {
 	entity *{{.EntityType}}
-	model  *{{.EntityType}}Model
+	model  *{{.EntityType}}ModelFields
 
 	selectFields []interface{}
 	insertFields []interface{}
@@ -60,7 +53,7 @@ func New{{.EntityType}}Mapper(e *{{.EntityType}}) *{{.EntityType}}Mapper {
 
 	return &{{.EntityType}}Mapper{
 		entity:  e,
-		model:   &{{.EntityType}}Model{entity: e},
+		model:   &{{.EntityType}}Model,
 
 		selectFields: []interface{}{{.SelectFields | asRefsSlice "&e"}},
 		insertFields: []interface{}{{.InsertFields | asRefsSlice "&e"}},
@@ -99,13 +92,13 @@ func (m *{{.EntityType}}Mapper) UpdateFields() []interface{} {
 func (m *{{.EntityType}}Mapper) UpdateFieldsMap() map[string]interface{} {
 	return map[string]interface{}{
 		{{- range .UpdateFields}}
-			"{{.ColumnName}}": {{. | asRef "&m"}},
+			"{{.ColumnName}}": {{. | asRef "&m.entity"}},
 		{{- end}}
 	}
 }
 {{if .AutoincrementField}}
 func (m *{{.EntityType}}Mapper) AutoincrementField() datamapper.Field {
-	return datamapper.Field{Name: "{{.AutoincrementField.ColumnName}}", Ref: {{.AutoincrementField | asRef "&m.model"}}}
+	return datamapper.Field{Name: "{{.AutoincrementField.ColumnName}}", Ref: {{.AutoincrementField | asRef "&m.entity"}}}
 }
 
 func (m *{{.EntityType}}Mapper) SetLastInsertID(v {{.AutoincrementField.FieldType}}) {
@@ -122,7 +115,7 @@ func (m *{{.EntityType}}Mapper) UntypedSetLastInsertID(v interface{}) error {
 }
 {{end}}
 
-func (m *{{.EntityType}}Mapper) Model() *{{.EntityType}}Model {
+func (m *{{.EntityType}}Mapper) Model() *{{.EntityType}}ModelFields {
 	return m.model
 }
 
