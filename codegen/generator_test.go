@@ -156,6 +156,11 @@ func (m *ModelMapper) Entity() *Model {
 	return m.entity
 }
 
+func (m *ModelMapper) DetachedEntity() *Model {
+	detached := *m.entity
+	return &detached
+}
+
 func (m *ModelMapper) UntypedEntity() interface{} {
 	return m.entity
 }

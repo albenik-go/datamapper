@@ -130,6 +130,11 @@ func (m *{{.EntityType}}Mapper) Entity() *{{.EntityType}} {
 	return m.entity
 }
 
+func (m *{{.EntityType}}Mapper) DetachedEntity() *{{.EntityType}} {
+	detached := *m.entity
+	return &detached
+}
+
 func (m *{{.EntityType}}Mapper) UntypedEntity() interface{} {
 	return m.entity
 }
